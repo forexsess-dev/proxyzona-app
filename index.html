@@ -804,7 +804,7 @@
             const key = urlParams.get('key') || '';
             const refCount = parseInt(urlParams.get('ref_count')) || 0;
             const refEarned = parseInt(urlParams.get('ref_earned')) || 0;
-            const refLink = urlParams.get('ref_link') || '';
+            const refLink = urlParams.get('ref_link') || (user ? 'https://t.me/proxyzonavpn_bot?start=ref_' + user.id : '');
 
             // --- Элементы DOM ---
             const statusBadge = document.getElementById('sub-status-badge');
