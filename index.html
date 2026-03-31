@@ -796,12 +796,18 @@
                 document.getElementById('user-id').textContent = 'id: ' + user.id;
             }
 
-            // --- Чтение URL параметров ---
+            // --- Чтение URL параметров ---//
             const urlParams = new URLSearchParams(window.location.search);
-            const status = urlParams.get('status') || 'inactive';
+            
+            // Проверяем подписку через наличие ссылки от бота
+            const subLinkFromBot = urlParams.get('sub_link');
+            const status = subLinkFromBot ? 'active' : 'inactive';
+            const key = subLinkFromBot || ''; 
+
             const days = parseInt(urlParams.get('days')) || 0;
             const totalDays = parseInt(urlParams.get('total_days')) || 30;
-            const key = urlParams.get('key') || '';
+            
+            // Параметры реферальной системы
             const refCount = parseInt(urlParams.get('ref_count')) || 0;
             const refEarned = parseInt(urlParams.get('ref_earned')) || 0;
             const refLink = urlParams.get('ref_link') || (user ? 'https://t.me/proxyzonavpn_bot?start=ref_' + user.id : '');
@@ -814,28 +820,26 @@
             const quickConnectCard = document.getElementById('quick-connect-card');
             const accessKeyInput = document.getElementById('access-key');
             const buyBtn = document.getElementById('buy-btn');
-            const instructionLink = document.getElementById('instruction-link');
+            const instructionLink = document.getElementById('instruction-link'); // <-- Вернул на место
             
-            // Элементы реферальной системы
             const refCountDisplay = document.getElementById('ref-count-display');
             const refEarnedDisplay = document.getElementById('ref-earned-display');
             const refLinkInput = document.getElementById('ref-link');
 
             // --- Применение параметров ---
-            // Реферальная система
+            
+            // 1. Сначала применяем данные реферальной системы
             if (refCountDisplay) refCountDisplay.textContent = refCount;
             if (refEarnedDisplay) refEarnedDisplay.textContent = refEarned + ' ₽';
-            if (refLinkInput && refLink) refLinkInput.value = refLink;
+            if (refLinkInput) refLinkInput.value = refLink;
 
+            // 2. Затем логика статуса подписки
             if (status === 'active') {
-                // Статус активен
                 if (statusBadge) {
                     statusBadge.textContent = 'активна';
-                    statusBadge.classList.add('status-active');
-                    statusBadge.classList.remove('status-inactive');
+                    statusBadge.className = 'status-badge status-active';
                 }
                 
-                // Прогресс-бар
                 if (progressContainer) progressContainer.classList.remove('hidden');
                 if (progressText) {
                     progressText.classList.remove('hidden');
@@ -845,45 +849,27 @@
                 if (progressFill) {
                     const percentage = Math.min((days / totalDays) * 100, 100);
                     progressFill.style.width = `${percentage}%`;
-                    
-                    // Если осталось 3 дня и меньше
-                    if ((totalDays - days) <= 3) {
-                        progressFill.classList.add('danger');
-                    } else {
-                        progressFill.classList.remove('danger');
-                    }
                 }
 
-                // Быстрое подключение
                 if (quickConnectCard) quickConnectCard.classList.remove('hidden');
-                if (accessKeyInput) accessKeyInput.value = key;
+                if (accessKeyInput) accessKeyInput.value = key; 
+                
+                // <-- Вернул формирование ссылки для Telegraph
                 if (instructionLink && key) {
                     instructionLink.href = 'https://telegra.ph/proxyzona-instruction-01-01?key=' + encodeURIComponent(key);
                 }
-
-                // Кнопка подписки
+                
                 if (buyBtn) buyBtn.textContent = 'продлить';
 
             } else {
-                // Статус неактивен
                 if (statusBadge) {
                     statusBadge.textContent = 'неактивна';
-                    statusBadge.classList.remove('status-active');
-                    statusBadge.classList.add('status-inactive');
+                    statusBadge.className = 'status-badge status-inactive';
                 }
-
-                // Скрываем прогресс-бар и текст
                 if (progressContainer) progressContainer.classList.add('hidden');
-                if (progressText) progressText.classList.add('hidden');
-
-                // Скрываем быстрое подключение
                 if (quickConnectCard) quickConnectCard.classList.add('hidden');
-
-                // Кнопка подписки
                 if (buyBtn) buyBtn.textContent = 'купить';
             }
-        });
-
         // Функция переключения вкладок (SPA логика)
         function switchTab(tabId, element) {
             // Скрываем все экраны
