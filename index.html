@@ -771,10 +771,9 @@
             <span>профиль</span>
         </div>
     </div>
-
+<script>
     <!-- ЛОГИКА ПРИЛОЖЕНИЯ -->
-    <script>
-        // Инициализация Telegram Web App
+   // Инициализация Telegram Web App
         const tg = window.Telegram.WebApp;
         
         document.addEventListener('DOMContentLoaded', () => {
@@ -796,7 +795,7 @@
                 document.getElementById('user-id').textContent = 'id: ' + user.id;
             }
 
-            // --- Чтение URL параметров ---//
+            // --- Чтение URL параметров ---
             const urlParams = new URLSearchParams(window.location.search);
             
             // Проверяем подписку через наличие ссылки от бота
@@ -820,14 +819,13 @@
             const quickConnectCard = document.getElementById('quick-connect-card');
             const accessKeyInput = document.getElementById('access-key');
             const buyBtn = document.getElementById('buy-btn');
-            const instructionLink = document.getElementById('instruction-link'); // <-- Вернул на место
+            const instructionLink = document.getElementById('instruction-link');
             
             const refCountDisplay = document.getElementById('ref-count-display');
             const refEarnedDisplay = document.getElementById('ref-earned-display');
             const refLinkInput = document.getElementById('ref-link');
 
             // --- Применение параметров ---
-            
             // 1. Сначала применяем данные реферальной системы
             if (refCountDisplay) refCountDisplay.textContent = refCount;
             if (refEarnedDisplay) refEarnedDisplay.textContent = refEarned + ' ₽';
@@ -854,7 +852,6 @@
                 if (quickConnectCard) quickConnectCard.classList.remove('hidden');
                 if (accessKeyInput) accessKeyInput.value = key; 
                 
-                // <-- Вернул формирование ссылки для Telegraph
                 if (instructionLink && key) {
                     instructionLink.href = 'https://telegra.ph/proxyzona-instruction-01-01?key=' + encodeURIComponent(key);
                 }
@@ -867,9 +864,12 @@
                     statusBadge.className = 'status-badge status-inactive';
                 }
                 if (progressContainer) progressContainer.classList.add('hidden');
+                if (progressText) progressText.classList.add('hidden');
                 if (quickConnectCard) quickConnectCard.classList.add('hidden');
                 if (buyBtn) buyBtn.textContent = 'купить';
             }
+        }); // КОНЕЦ БЛОКА ИНИЦИАЛИЗАЦИИ (Именно эта скобка потерялась!)
+
         // Функция переключения вкладок (SPA логика)
         function switchTab(tabId, element) {
             // Скрываем все экраны
@@ -932,9 +932,6 @@
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('medium');
             }
-            
-            // Отправляем данные обратно боту для обработки платежа
-            // Бот получит эти данные в событии web_app_data
             tg.sendData(planId);
         }
 
