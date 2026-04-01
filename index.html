@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>proxyzona VPN</title>
-    <!-- Подключение Telegram Web App API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Подключение хакерского шрифта JetBrains Mono -->
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <!-- Подключение иконок FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -95,7 +92,7 @@
         /* Карточки */
         .card {
             background-color: var(--card-bg);
-            border-radius: 8px; /* Более угловатые формы для хакерского стиля */
+            border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
             border: 1px solid var(--border-color);
@@ -316,50 +313,90 @@
             box-shadow: 0 0 15px rgba(255, 68, 68, 0.6);
         }
 
-        .progress-labels {
+        /* Свитчер периодов */
+        .period-switcher {
             display: flex;
-            justify-content: space-between;
-            font-size: 11px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 4px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+        }
+        .period-option {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            font-size: 12px;
+            font-weight: 700;
             color: var(--text-muted);
-            margin-top: 8px;
-            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
         }
-
-        /* Сетка тарифов */
-        .tariff-grid {
-            display: grid;
-            gap: 15px;
-        }
-
-        .tariff-card {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .tariff-card.popular {
-            border-color: var(--accent-color);
+        .period-option.active {
+            background: var(--accent-color);
+            color: var(--bg-color);
             box-shadow: var(--glow);
         }
 
-        .popular-badge {
-            position: absolute;
-            top: 0;
-            right: 0;
-            background: var(--accent-color);
-            color: var(--bg-color);
-            font-size: 10px;
-            font-weight: 800;
-            padding: 4px 12px;
-            border-bottom-left-radius: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        /* Калькулятор цены и устройств */
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 15px;
         }
 
         .tariff-price {
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 800;
-            margin: 10px 0;
+            margin: 0;
             text-shadow: var(--glow-text);
+        }
+
+        .device-counter {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .device-counter span {
+            font-size: 13px;
+            font-weight: 700;
+            min-width: 65px;
+            text-align: center;
+        }
+
+        .btn-counter {
+            background: transparent;
+            color: var(--accent-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-counter:disabled {
+            color: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+            box-shadow: none;
+            background: transparent;
+        }
+
+        .btn-counter:not(:disabled):hover {
+            background: var(--accent-color);
+            color: var(--bg-color);
+            box-shadow: var(--glow);
         }
 
         .tariff-features {
@@ -461,32 +498,6 @@
             50% { opacity: 0; }
         }
 
-        /* Свитчер периодов */
-        .period-switcher {
-            display: flex;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 6px;
-            padding: 4px;
-            margin-bottom: 15px;
-            border: 1px solid var(--border-color);
-        }
-        .period-option {
-            flex: 1;
-            text-align: center;
-            padding: 8px 0;
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text-muted);
-            cursor: pointer;
-            border-radius: 4px;
-            transition: all 0.3s;
-        }
-        .period-option.active {
-            background: var(--accent-color);
-            color: var(--bg-color);
-            box-shadow: var(--glow);
-        }
-
         /* Модальные окна */
         .modal {
             display: none;
@@ -528,17 +539,14 @@
 </head>
 <body>
 
-    <!-- Уведомление -->
     <div id="toast" class="toast">скопировано!</div>
 
     <div class="app-container">
         
-        <!-- Верхний бар -->
         <div class="global-header">
             <span>protect by proxyzona</span>
         </div>
 
-        <!-- ЭКРАН: ГЛАВНАЯ -->
         <div id="screen-main" class="screen active">
             <div class="header-logo">
                 <i class="fa-solid fa-terminal"></i>
@@ -552,7 +560,6 @@
                 
                 <div class="progress-container" id="sub-progress-container">
                     <div class="progress-bar">
-                        <!-- Если остается 3 дня и меньше (использовано >= 27 из 30), добавляем класс danger -->
                         <div class="progress-fill" id="sub-progress-fill" style="width: 90%;"></div>
                     </div>
                 </div>
@@ -577,7 +584,6 @@
             </div>
         </div>
 
-        <!-- ЭКРАН: СОГЛАШЕНИЯ -->
         <div id="screen-agreements" class="screen">
             <h2>соглашения</h2>
             <p class="text-muted" style="margin-bottom: 20px;">юридическая информация и правила использования сервиса</p>
@@ -599,30 +605,38 @@
             </a>
         </div>
 
-        <!-- ЭКРАН: ПОДПИСКА -->
         <div id="screen-subscription" class="screen">
             <h2>управление подпиской</h2>
             <p class="text-muted" style="margin-bottom: 20px;">выберите подходящий тарифный план</p>
 
             <div class="card" id="purchase-card">
                 <h3>покупка подписки</h3>
+                
                 <div class="period-switcher">
-                    <div class="period-option active" onclick="selectPeriod(1, 150, 'buy_plan_1month', this)">1 мес</div>
-                    <div class="period-option" onclick="selectPeriod(3, 400, 'buy_plan_3months', this)">3 мес</div>
-                    <div class="period-option" onclick="selectPeriod(6, 750, 'buy_plan_6months', this)">6 мес</div>
-                    <div class="period-option" onclick="selectPeriod(12, 1200, 'buy_plan_1year', this)">1 год</div>
+                    <div class="period-option active" onclick="selectPeriod(1, 200, 'buy_plan_1month', this, 3)">1 мес</div>
+                    <div class="period-option" onclick="selectPeriod(3, 450, 'buy_plan_3months', this, 5)">3 мес</div>
+                    <div class="period-option" onclick="selectPeriod(6, 800, 'buy_plan_6months', this, 8)">6 мес</div>
+                    <div class="period-option" onclick="selectPeriod(12, 1450, 'buy_plan_1year', this, 10)">1 год</div>
                 </div>
-                <div class="tariff-price" id="selected-price">150 ₽</div>
+                
+                <div class="price-row">
+                    <div class="tariff-price" id="selected-price">200 ₽</div>
+                    <div class="device-counter">
+                        <button id="dev-minus" class="btn-counter" onclick="changeDevices(-1)" disabled><i class="fa-solid fa-minus"></i></button>
+                        <span id="dev-count">3 устр.</span>
+                        <button id="dev-plus" class="btn-counter" onclick="changeDevices(1)"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                </div>
+
                 <ul class="tariff-features">
                     <li><i class="fa-solid fa-check"></i> безлимитный трафик</li>
-                    <li><i class="fa-solid fa-check"></i> современные протоколы vless(reality) // hysteria2</li>
-                    <li><i class="fa-solid fa-check"></i> безлимитное количество устройств</li>
+                    <li><i class="fa-solid fa-check"></i> современные протоколы vless // hysteria2</li>
+                    <li><i class="fa-solid fa-check"></i> 50 ₽ за каждое доп. устройство</li>
                 </ul>
-                <button class="btn-primary" id="buy-btn" onclick="buyPlan('buy_plan_1month')">купить</button>
+                <button class="btn-primary" id="buy-btn" onclick="buyPlan('buy_plan_1month_3')">купить</button>
             </div>
         </div>
 
-        <!-- ЭКРАН: ПРОФИЛЬ -->
         <div id="screen-profile" class="screen">
             <div style="text-align: center; margin-bottom: 30px; margin-top: 20px;">
                 <div style="width: 80px; height: 80px; background: transparent; border-radius: 4px; margin: 0 auto 15px auto; display: flex; align-items: center; justify-content: center; font-size: 32px; color: var(--accent-color); border: 2px solid var(--accent-color); box-shadow: var(--glow);">
@@ -680,7 +694,6 @@
 
     </div>
 
-    <!-- МОДАЛЬНЫЕ ОКНА -->
     <div id="modal-privacy" class="modal">
         <div class="modal-header">
             <button class="btn-icon" onclick="closeModal('privacy')"><i class="fa-solid fa-arrow-left"></i></button>
@@ -710,8 +723,7 @@
 <h4>3. Заключительные положения</h4>3.1. Пользователь, заинтересованный в услугах сервиса, оформляет заказ через интерфейс telegram-бота proxyzona. При оформлении заказа Пользователь выбирает необходимый тарифный план, определяющий срок действия подписки, лимиты трафика, доступные протоколы и количество одновременно подключаемых устройств.
 3.2. Деятельность Администрации telegram-бота proxyzona осуществляется в соответствии с законодательством РФ. Любые претензии, споры, официальные обращения будут рассматриваться исключительно в порядке, предусмотренном законодательством РФ.
 3.3. Администрация telegram-бота proxyzona не несёт ответственности за любые прямые или косвенные убытки, понесённые Пользователями или третьими сторонами, а также за упущенную выгоду при использовании, невозможности использования или результатов использования telegram-бота proxyzona.
-3.4. Условия настоящей Политики конфиденциальности могут быть изменены Администрацией telegram-бота proxyzona в одностороннем порядке. Актуальная версия всегда доступна в интерфейсе Бота.</div>
-    </div>
+3.4. Условия настоящей Политики конфиденциальности могут быть изменены Администрацией telegram-бота proxyzona в одностороннем порядке. Актуальная версия всегда доступна в интерфейсе Бота.</div> </div>
 
     <div id="modal-terms" class="modal">
         <div class="modal-header">
@@ -752,7 +764,6 @@
 8.2. Если какое-либо положение настоящего Соглашения будет признано недействительным, это не повлияет на действительность остальных положений.</div>
     </div>
 
-    <!-- НИЖНЕЕ МЕНЮ (TAB BAR) -->
     <div class="tab-bar">
         <div class="tab-item active" onclick="switchTab('main', this)">
             <i class="fa-solid fa-terminal"></i>
@@ -771,210 +782,184 @@
             <span>профиль</span>
         </div>
     </div>
+
 <script>
-    <!-- ЛОГИКА ПРИЛОЖЕНИЯ -->
-   // Инициализация Telegram Web App
-        const tg = window.Telegram.WebApp;
+    // --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ДЛЯ КАЛЬКУЛЯТОРА ---
+    let currentBasePrice = 200;
+    let currentMinDevices = 3;
+    let currentDevices = 3;
+    let currentPlanId = 'buy_plan_1month';
+
+    // Инициализация Telegram Web App
+    const tg = window.Telegram.WebApp;
         
-        document.addEventListener('DOMContentLoaded', () => {
-            // Сообщаем Telegram, что приложение готово
-            tg.ready();
-            // Разворачиваем на весь экран
-            tg.expand();
-            
-            // Устанавливаем цвета темы под дизайн
-            tg.setHeaderColor('#000000');
-            tg.setBackgroundColor('#000000');
+    document.addEventListener('DOMContentLoaded', () => {
+        tg.ready();
+        tg.expand();
+        tg.setHeaderColor('#000000');
+        tg.setBackgroundColor('#000000');
 
-            // Получаем данные пользователя из Telegram
-            const user = tg.initDataUnsafe?.user;
-            if (user) {
-                // Формируем имя
-                const fullName = user.first_name + (user.last_name ? ' ' + user.last_name : '');
-                document.getElementById('user-name').textContent = fullName.toLowerCase();
-                document.getElementById('user-id').textContent = 'id: ' + user.id;
+        const user = tg.initDataUnsafe?.user;
+        if (user) {
+            const fullName = user.first_name + (user.last_name ? ' ' + user.last_name : '');
+            document.getElementById('user-name').textContent = fullName.toLowerCase();
+            document.getElementById('user-id').textContent = 'id: ' + user.id;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const subLinkFromBot = urlParams.get('sub_link');
+        const status = subLinkFromBot ? 'active' : 'inactive';
+        const key = subLinkFromBot || ''; 
+        const days = parseInt(urlParams.get('days')) || 0;
+        const totalDays = parseInt(urlParams.get('total_days')) || 30;
+        
+        const refCount = parseInt(urlParams.get('ref_count')) || 0;
+        const refEarned = parseInt(urlParams.get('ref_earned')) || 0;
+        const refLink = urlParams.get('ref_link') || (user ? 'https://t.me/proxyzonavpn_bot?start=ref_' + user.id : '');
+
+        const statusBadge = document.getElementById('sub-status-badge');
+        const progressText = document.getElementById('sub-progress-text');
+        const progressContainer = document.getElementById('sub-progress-container');
+        const progressFill = document.getElementById('sub-progress-fill');
+        const quickConnectCard = document.getElementById('quick-connect-card');
+        const accessKeyInput = document.getElementById('access-key');
+        const buyBtn = document.getElementById('buy-btn');
+        const instructionLink = document.getElementById('instruction-link');
+        
+        const refCountDisplay = document.getElementById('ref-count-display');
+        const refEarnedDisplay = document.getElementById('ref-earned-display');
+        const refLinkInput = document.getElementById('ref-link');
+
+        if (refCountDisplay) refCountDisplay.textContent = refCount;
+        if (refEarnedDisplay) refEarnedDisplay.textContent = refEarned + ' ₽';
+        if (refLinkInput) refLinkInput.value = refLink;
+
+        if (status === 'active') {
+            if (statusBadge) {
+                statusBadge.textContent = 'активна';
+                statusBadge.className = 'status-badge status-active';
             }
-
-            // --- Чтение URL параметров ---
-            const urlParams = new URLSearchParams(window.location.search);
-            
-            // Проверяем подписку через наличие ссылки от бота
-            const subLinkFromBot = urlParams.get('sub_link');
-            const status = subLinkFromBot ? 'active' : 'inactive';
-            const key = subLinkFromBot || ''; 
-
-            const days = parseInt(urlParams.get('days')) || 0;
-            const totalDays = parseInt(urlParams.get('total_days')) || 30;
-            
-            // Параметры реферальной системы
-            const refCount = parseInt(urlParams.get('ref_count')) || 0;
-            const refEarned = parseInt(urlParams.get('ref_earned')) || 0;
-            const refLink = urlParams.get('ref_link') || (user ? 'https://t.me/proxyzonavpn_bot?start=ref_' + user.id : '');
-
-            // --- Элементы DOM ---
-            const statusBadge = document.getElementById('sub-status-badge');
-            const progressText = document.getElementById('sub-progress-text');
-            const progressContainer = document.getElementById('sub-progress-container');
-            const progressFill = document.getElementById('sub-progress-fill');
-            const quickConnectCard = document.getElementById('quick-connect-card');
-            const accessKeyInput = document.getElementById('access-key');
-            const buyBtn = document.getElementById('buy-btn');
-            const instructionLink = document.getElementById('instruction-link');
-            
-            const refCountDisplay = document.getElementById('ref-count-display');
-            const refEarnedDisplay = document.getElementById('ref-earned-display');
-            const refLinkInput = document.getElementById('ref-link');
-
-            // --- Применение параметров ---
-            // 1. Сначала применяем данные реферальной системы
-            if (refCountDisplay) refCountDisplay.textContent = refCount;
-            if (refEarnedDisplay) refEarnedDisplay.textContent = refEarned + ' ₽';
-            if (refLinkInput) refLinkInput.value = refLink;
-
-            // 2. Затем логика статуса подписки
-            if (status === 'active') {
-                if (statusBadge) {
-                    statusBadge.textContent = 'активна';
-                    statusBadge.className = 'status-badge status-active';
-                }
-                
             if (progressText) {
                 progressText.classList.remove('hidden');
                 progressText.textContent = `осталось: ${days} дней`;
-                }
-
+            }
             if (progressFill) {
-                // 1. Считаем процент заполнения
                 const percentage = Math.min((days / totalDays) * 100, 100);
                 progressFill.style.width = `${percentage}%`;
-
-                // 2. Если осталось 3 дня или меньше — красим полоску в красный
-            if (days <= 3) {
-                progressFill.classList.add('danger');
-            } else {
-                progressFill.classList.remove('danger');
-            }
-        }
-
-                if (quickConnectCard) quickConnectCard.classList.remove('hidden');
-                if (accessKeyInput) accessKeyInput.value = key; 
-                
-                if (instructionLink && key) {
-                    instructionLink.href = key;
+                if (days <= 3) {
+                    progressFill.classList.add('danger');
+                } else {
+                    progressFill.classList.remove('danger');
                 }
-                
-                if (buyBtn) buyBtn.textContent = 'продлить';
-
-            } else {
-                if (statusBadge) {
-                    statusBadge.textContent = 'неактивна';
-                    statusBadge.className = 'status-badge status-inactive';
-                }
-                if (progressContainer) progressContainer.classList.add('hidden');
-                if (progressText) progressText.classList.add('hidden');
-                if (quickConnectCard) quickConnectCard.classList.add('hidden');
-                if (buyBtn) buyBtn.textContent = 'купить';
             }
-        }); // КОНЕЦ БЛОКА ИНИЦИАЛИЗАЦИИ (Именно эта скобка потерялась!)
-
-        // Функция переключения вкладок (SPA логика)
-        function switchTab(tabId, element) {
-            // Скрываем все экраны
-            document.querySelectorAll('.screen').forEach(screen => {
-                screen.classList.remove('active');
-            });
-            // Убираем активный класс у всех табов
-            document.querySelectorAll('.tab-item').forEach(tab => {
-                tab.classList.remove('active');
-            });
-
-            // Показываем нужный экран и активируем таб
-            document.getElementById('screen-' + tabId).classList.add('active');
-            element.classList.add('active');
-            
-            // Легкая вибрация при переключении табов (Haptic Feedback)
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.selectionChanged();
+            if (quickConnectCard) quickConnectCard.classList.remove('hidden');
+            if (accessKeyInput) accessKeyInput.value = key; 
+            if (instructionLink && key) instructionLink.href = key;
+            if (buyBtn) buyBtn.textContent = 'продлить';
+        } else {
+            if (statusBadge) {
+                statusBadge.textContent = 'неактивна';
+                statusBadge.className = 'status-badge status-inactive';
             }
+            if (progressContainer) progressContainer.classList.add('hidden');
+            if (progressText) progressText.classList.add('hidden');
+            if (quickConnectCard) quickConnectCard.classList.add('hidden');
+            if (buyBtn) buyBtn.textContent = 'купить';
         }
+    });
 
-        // Функция копирования текста в буфер обмена
-        function copyToClipboard(inputId) {
-            const input = document.getElementById(inputId);
-            
-            // Выделяем текст
-            input.select();
-            input.setSelectionRange(0, 99999); // Для мобильных устройств
-            
-            // Копируем через Clipboard API
-            navigator.clipboard.writeText(input.value).then(() => {
-                showToast('скопировано!');
-                // Уведомление об успешном действии (Haptic Feedback)
-                if (tg.HapticFeedback) {
-                    tg.HapticFeedback.notificationOccurred('success');
-                }
-            }).catch(err => {
-                console.error('Ошибка копирования: ', err);
-                // Fallback для старых браузеров
-                document.execCommand('copy');
-                showToast('скопировано!');
-            });
-        }
+    function switchTab(tabId, element) {
+        document.querySelectorAll('.screen').forEach(screen => {
+            screen.classList.remove('active');
+        });
+        document.querySelectorAll('.tab-item').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.getElementById('screen-' + tabId).classList.add('active');
+        element.classList.add('active');
+        
+        if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+    }
 
-        // Функция показа всплывающего уведомления (Toast)
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.classList.add('show');
-            
-            // Скрываем через 2 секунды
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 2000);
-        }
+    function copyToClipboard(inputId) {
+        const input = document.getElementById(inputId);
+        input.select();
+        input.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(input.value).then(() => {
+            showToast('скопировано!');
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        }).catch(err => {
+            document.execCommand('copy');
+            showToast('скопировано!');
+        });
+    }
 
-// Функция покупки тарифа (отправка данных боту через Deep Link)
-        function buyPlan(planId) {
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('medium');
-            }
-            // Закрываем Mini App и отправляем команду боту
-            tg.openTelegramLink('https://t.me/proxyzonavpn_bot?start=' + planId);
-        }
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+    }
 
-        // Выбор периода подписки
-        function selectPeriod(months, price, planId, element) {
-            // Обновляем активный класс
-            const options = element.parentElement.querySelectorAll('.period-option');
-            options.forEach(opt => opt.classList.remove('active'));
-            element.classList.add('active');
+    // --- ЛОГИКА КАЛЬКУЛЯТОРА И ПОКУПКИ ---
 
-            // Обновляем цену
-            document.getElementById('selected-price').textContent = price + ' ₽';
+    function selectPeriod(months, price, planId, element, minDevices) {
+        const options = element.parentElement.querySelectorAll('.period-option');
+        options.forEach(opt => opt.classList.remove('active'));
+        element.classList.add('active');
 
-            // Обновляем ID плана на кнопке
-            document.getElementById('buy-btn').setAttribute('onclick', `buyPlan('${planId}')`);
+        // Обновляем текущие значения
+        currentBasePrice = price;
+        currentMinDevices = minDevices;
+        currentDevices = minDevices; // При смене тарифа сбрасываем на минимум
+        currentPlanId = planId;
 
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.selectionChanged();
-            }
-        }
+        updateCalculatorUI();
 
-        // Показ модального окна
-        function showModal(id) {
-            document.getElementById('modal-' + id).classList.add('active');
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('light');
-            }
-        }
+        if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+    }
 
-        // Скрытие модального окна
-        function closeModal(id) {
-            document.getElementById('modal-' + id).classList.remove('active');
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('light');
-            }
-        }
-    </script>
+    function changeDevices(delta) {
+        // Запрещаем опускаться ниже минимального порога для тарифа
+        if (currentDevices + delta < currentMinDevices) return;
+        
+        currentDevices += delta;
+        updateCalculatorUI();
+
+        if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+    }
+
+    function updateCalculatorUI() {
+        // Считаем итоговую цену (доп. устройства по 50р)
+        const extraDevices = currentDevices - currentMinDevices;
+        const totalPrice = currentBasePrice + (extraDevices * 50);
+
+        // Обновляем текст на экране
+        document.getElementById('selected-price').textContent = totalPrice + ' ₽';
+        document.getElementById('dev-count').textContent = currentDevices + ' устр.';
+
+        // Блокируем кнопку минус, если достигли минимума
+        document.getElementById('dev-minus').disabled = (currentDevices <= currentMinDevices);
+
+        // Формируем payload для бота: planId + количество устройств (например: buy_plan_1month_3)
+        document.getElementById('buy-btn').setAttribute('onclick', `buyPlan('${currentPlanId}_${currentDevices}')`);
+    }
+
+    function buyPlan(payload) {
+        if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+        // Отправляем команду боту с payload
+        tg.openTelegramLink('https://t.me/proxyzonavpn_bot?start=' + payload);
+    }
+
+    function showModal(id) {
+        document.getElementById('modal-' + id).classList.add('active');
+        if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    }
+
+    function closeModal(id) {
+        document.getElementById('modal-' + id).classList.remove('active');
+        if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    }
+</script>
 </body>
 </html>
