@@ -274,14 +274,20 @@
             text-shadow: var(--glow-text);
         }
 
-        /* Специфичные компоненты */
+        /* Специфичные компоненты: ШАПКА И БАЛАНС */
+        .header-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
         .header-logo {
             display: flex;
             align-items: center;
             gap: 12px;
             font-size: 22px;
             font-weight: 800;
-            margin-bottom: 25px;
             text-transform: uppercase;
             letter-spacing: 1px;
             text-shadow: var(--glow-text);
@@ -289,6 +295,30 @@
 
         .header-logo i {
             color: var(--accent-color);
+        }
+
+        .balance-badge {
+            background: var(--overlay-bg);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: var(--glow);
+        }
+
+        .balance-badge .muted-label {
+            color: var(--text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .balance-badge .balance-amount {
+            font-weight: 800;
+            font-size: 14px;
+            color: var(--accent-color);
+            text-shadow: var(--glow-text);
         }
 
         .status-badge {
@@ -581,9 +611,16 @@
         </div>
 
         <div id="screen-main" class="screen active">
-            <div class="header-logo">
-                <i class="fa-solid fa-terminal"></i>
-                <span>resonance<span class="cursor-blink"></span></span>
+            
+            <div class="header-top-row">
+                <div class="header-logo">
+                    <i class="fa-solid fa-terminal"></i>
+                    <span>resonance<span class="cursor-blink"></span></span>
+                </div>
+                <div class="balance-badge">
+                    <span class="muted-label">баланс:</span>
+                    <span id="user-balance" class="balance-amount">0 ₽</span>
+                </div>
             </div>
 
             <div class="card">
@@ -600,9 +637,9 @@
 
             <div class="card" id="quick-connect-card">
                 <h3>быстрое подключение</h3>
-                <p class="text-muted">скопируйте ключ и вставьте в приложение hiddify</p>
+                <p class="text-muted">скопируйте ключ и вставьте в клиент v2ray</p>
                 <div class="input-group">
-                    <input type="text" id="access-key" value="vless://d3b8...resonance.net:443" readonly>
+                    <input type="text" id="access-key" value="" readonly>
                     <button class="btn-icon" onclick="copyToClipboard('access-key')">
                         <i class="fa-regular fa-copy"></i>
                     </button>
@@ -666,7 +703,7 @@
                     <li><i class="fa-solid fa-check"></i> современные протоколы vless // hysteria2</li>
                     <li><i class="fa-solid fa-check"></i> 50 ₽ за каждое доп. устройство</li>
                 </ul>
-                <button class="btn-primary" id="buy-btn" onclick="buyPlan('buy_plan_1month_3')">купить</button>
+                <button class="btn-primary" id="buy-btn" onclick="buyPlan('buy_plan_1month_3')">оплатить</button>
             </div>
         </div>
 
@@ -843,30 +880,48 @@
             }
         }
 
-        // Применяем тему при загрузке
         applyTheme();
-        
-        // Слушаем изменения темы устройства "на лету"
         tg.onEvent('themeChanged', applyTheme);
 
-        const user = tg.initDataUnsafe?.user;
-        if (user) {
-            const fullName = user.first_name + (user.last_name ? ' ' + user.last_name : '');
-            document.getElementById('user-name').textContent = fullName.toLowerCase();
-            document.getElementById('user-id').textContent = 'id: ' + user.id;
-        }
-
+        // Читаем все параметры из URL, которые прислал нам бот
         const urlParams = new URLSearchParams(window.location.search);
+        
+        // --- ЗАЩИТА ОТ user_unknown ---
+        // Берем данные из Телеграма, но если их нет (ошибка кэша на ПК), берем из ссылки!
+        const safeUserId = tg.initDataUnsafe?.user?.id || urlParams.get('id') || '000000000';
+        const safeUserName = tg.initDataUnsafe?.user?.first_name 
+            ? (tg.initDataUnsafe.user.first_name + (tg.initDataUnsafe.user.last_name ? ' ' + tg.initDataUnsafe.user.last_name : '')) 
+            : (urlParams.get('username') || 'resonance user');
+
+        document.getElementById('user-name').textContent = safeUserName.toLowerCase();
+        document.getElementById('user-id').textContent = 'id: ' + safeUserId;
+
+        // Данные подписки
         const subLinkFromBot = urlParams.get('sub_link');
         const status = subLinkFromBot ? 'active' : 'inactive';
         const key = subLinkFromBot || ''; 
         const days = parseInt(urlParams.get('days')) || 0;
         const totalDays = parseInt(urlParams.get('total_days')) || 30;
         
+        // ДАННЫЕ БАЛАНСА И РЕФЕРАЛКИ
+        const userBalance = parseInt(urlParams.get('balance')) || 0;
         const refCount = parseInt(urlParams.get('ref_count')) || 0;
         const refEarned = parseInt(urlParams.get('ref_earned')) || 0;
-        const refLink = urlParams.get('ref_link') || (user ? 'https://t.me/resonancerobot?start=ref_' + user.id : '');
+        const refLink = urlParams.get('ref_link') || ('https://t.me/resonancerobot?start=ref_' + safeUserId);
 
+        // Обновляем текст на странице
+        const balanceDisplay = document.getElementById('user-balance');
+        if (balanceDisplay) balanceDisplay.textContent = userBalance + ' ₽';
+
+        const refCountDisplay = document.getElementById('ref-count-display');
+        const refEarnedDisplay = document.getElementById('ref-earned-display');
+        const refLinkInput = document.getElementById('ref-link');
+
+        if (refCountDisplay) refCountDisplay.textContent = refCount;
+        if (refEarnedDisplay) refEarnedDisplay.textContent = refEarned + ' ₽';
+        if (refLinkInput) refLinkInput.value = refLink;
+
+        // Управление видимостью карточек (Активна/Неактивна)
         const statusBadge = document.getElementById('sub-status-badge');
         const progressText = document.getElementById('sub-progress-text');
         const progressContainer = document.getElementById('sub-progress-container');
@@ -876,14 +931,6 @@
         const buyBtn = document.getElementById('buy-btn');
         const instructionLink = document.getElementById('instruction-link');
         
-        const refCountDisplay = document.getElementById('ref-count-display');
-        const refEarnedDisplay = document.getElementById('ref-earned-display');
-        const refLinkInput = document.getElementById('ref-link');
-
-        if (refCountDisplay) refCountDisplay.textContent = refCount;
-        if (refEarnedDisplay) refEarnedDisplay.textContent = refEarned + ' ₽';
-        if (refLinkInput) refLinkInput.value = refLink;
-
         if (status === 'active') {
             if (statusBadge) {
                 statusBadge.textContent = 'активна';
@@ -905,7 +952,6 @@
             if (quickConnectCard) quickConnectCard.classList.remove('hidden');
             if (accessKeyInput) accessKeyInput.value = key; 
             if (instructionLink && key) instructionLink.href = key;
-            if (buyBtn) buyBtn.textContent = 'продлить';
         } else {
             if (statusBadge) {
                 statusBadge.textContent = 'неактивна';
@@ -914,7 +960,6 @@
             if (progressContainer) progressContainer.classList.add('hidden');
             if (progressText) progressText.classList.add('hidden');
             if (quickConnectCard) quickConnectCard.classList.add('hidden');
-            if (buyBtn) buyBtn.textContent = 'купить';
         }
     });
 
@@ -958,46 +1003,38 @@
         options.forEach(opt => opt.classList.remove('active'));
         element.classList.add('active');
 
-        // Обновляем текущие значения
         currentBasePrice = price;
         currentMinDevices = minDevices;
-        currentDevices = minDevices; // При смене тарифа сбрасываем на минимум
+        currentDevices = minDevices;
         currentPlanId = planId;
 
         updateCalculatorUI();
-
         if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
     }
 
     function changeDevices(delta) {
-        // Запрещаем опускаться ниже минимального порога для тарифа
         if (currentDevices + delta < currentMinDevices) return;
         
         currentDevices += delta;
         updateCalculatorUI();
-
         if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
     }
 
     function updateCalculatorUI() {
-        // Считаем итоговую цену (доп. устройства по 50р)
         const extraDevices = currentDevices - currentMinDevices;
         const totalPrice = currentBasePrice + (extraDevices * 50);
 
-        // Обновляем текст на экране
         document.getElementById('selected-price').textContent = totalPrice + ' ₽';
         document.getElementById('dev-count').textContent = currentDevices + ' устр.';
-
-        // Блокируем кнопку минус, если достигли минимума
         document.getElementById('dev-minus').disabled = (currentDevices <= currentMinDevices);
 
-        // Формируем payload для бота: planId + количество устройств (например: buy_plan_1month_3)
+        // payload для бота: buy_plan_1month_3
         document.getElementById('buy-btn').setAttribute('onclick', `buyPlan('${currentPlanId}_${currentDevices}')`);
     }
 
     function buyPlan(payload) {
         if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-        // Отправляем команду боту с payload
+        // Клик по кнопке "Оплатить" перенаправит в бота с командой /start buy_plan...
         tg.openTelegramLink('https://t.me/resonancerobot?start=' + payload);
     }
 
