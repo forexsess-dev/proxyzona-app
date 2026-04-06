@@ -905,23 +905,27 @@
     </div>
 
 <script>
-    // --- Стартовые переменные на 2 устройства и 200р ---
+    // --- Стартовые переменные ---
     let currentBasePrice = 200;
     let currentMinDevices = 2;
     let currentDevices = 2;
     let currentPlanId = 'buy_plan_1month';
-    // Новые переменные для отслеживания текущего бейджа
     let currentBadgeType = 'hit';
     let currentBadgeText = 'хит';
 
-    // Инициализация Telegram Web App
     const tg = window.Telegram.WebApp;
-        
+    
+    // ⚠️ УКАЖИ ЗДЕСЬ АДРЕС И ПОРТ ТВОЕГО БОТА (или путь проксирования Nginx)
+    const API_URL = "https://panelfinal.mooo.com:8080"; 
+
+    // Получаем безопасный ID
+    const urlParams = new URLSearchParams(window.location.search);
+    const safeUserId = tg.initDataUnsafe?.user?.id || urlParams.get('id') || '000000000';
+    
     document.addEventListener('DOMContentLoaded', () => {
         tg.ready();
         tg.expand();
 
-        // --- ЛОГИКА АДАПТИВНОЙ ТЕМЫ ---
         function applyTheme() {
             if (tg.colorScheme === 'dark') {
                 document.body.classList.add('dark-theme');
@@ -933,99 +937,83 @@
                 tg.setBackgroundColor('#ffffff');
             }
         }
-
         applyTheme();
         tg.onEvent('themeChanged', applyTheme);
 
-        // Читаем все параметры из URL, которые прислал нам бот
-        const urlParams = new URLSearchParams(window.location.search);
-        
-        // --- ЗАЩИТА ОТ user_unknown ---
-        const safeUserId = tg.initDataUnsafe?.user?.id || urlParams.get('id') || '000000000';
         const safeUserName = tg.initDataUnsafe?.user?.first_name 
             ? (tg.initDataUnsafe.user.first_name + (tg.initDataUnsafe.user.last_name ? ' ' + tg.initDataUnsafe.user.last_name : '')) 
-            : (urlParams.get('username') || 'resonance user');
+            : 'resonance user';
 
         document.getElementById('user-name').textContent = safeUserName.toLowerCase();
         document.getElementById('user-id').textContent = 'id: ' + safeUserId;
 
-        // Данные подписки
-        const subLinkFromBot = urlParams.get('sub_link');
-        const status = subLinkFromBot ? 'active' : 'inactive';
-        const key = subLinkFromBot || ''; 
-        const days = parseInt(urlParams.get('days')) || 0;
-        const totalDays = parseInt(urlParams.get('total_days')) || 30;
-        
-        // ДАННЫЕ БАЛАНСА И РЕФЕРАЛКИ
-        const userBalance = parseInt(urlParams.get('balance')) || 0;
-        const refCount = parseInt(urlParams.get('ref_count')) || 0;
-        const refEarned = parseInt(urlParams.get('ref_earned')) || 0;
-        const refLink = urlParams.get('ref_link') || ('https://t.me/resonancerobot?start=ref_' + safeUserId);
+        // Первый вызов при загрузке
+        refreshData();
+    });
 
-        // Обновляем текст на странице
-        const balanceDisplay = document.getElementById('user-balance');
-        if (balanceDisplay) balanceDisplay.textContent = userBalance + ' ₽';
-
-        const refCountDisplay = document.getElementById('ref-count-display');
-        const refEarnedDisplay = document.getElementById('ref-earned-display');
-        const refLinkInput = document.getElementById('ref-link');
-
-        if (refCountDisplay) refCountDisplay.textContent = refCount;
-        if (refEarnedDisplay) refEarnedDisplay.textContent = refEarned + ' ₽';
-        if (refLinkInput) refLinkInput.value = refLink;
-
-        // Управление видимостью карточек
-        const statusBadge = document.getElementById('sub-status-badge');
-        const progressText = document.getElementById('sub-progress-text');
-        const progressContainer = document.getElementById('sub-progress-container');
-        const progressFill = document.getElementById('sub-progress-fill');
-        const quickConnectCard = document.getElementById('quick-connect-card');
-        const accessKeyInput = document.getElementById('access-key');
-        const buyBtn = document.getElementById('buy-btn');
-        const instructionLink = document.getElementById('instruction-link');
-        
-        if (status === 'active') {
-            if (statusBadge) {
-                statusBadge.textContent = 'активна';
-                statusBadge.className = 'status-badge status-active';
-            }
-            if (progressText) {
-                progressText.classList.remove('hidden');
-                progressText.textContent = `осталось: ${days} дней`;
-            }
-            if (progressFill) {
-                const percentage = Math.min((days / totalDays) * 100, 100);
-                progressFill.style.width = `${percentage}%`;
-                if (days <= 3) {
-                    progressFill.classList.add('danger');
-                } else {
-                    progressFill.classList.remove('danger');
-                }
-            }
-            if (quickConnectCard) quickConnectCard.classList.remove('hidden');
-            if (accessKeyInput) accessKeyInput.value = key; 
-            if (instructionLink && key) instructionLink.href = key;
-        } else {
-            if (statusBadge) {
-                statusBadge.textContent = 'неактивна';
-                statusBadge.className = 'status-badge status-inactive';
-            }
-            if (progressContainer) progressContainer.classList.add('hidden');
-            if (progressText) progressText.classList.add('hidden');
-            if (quickConnectCard) quickConnectCard.classList.add('hidden');
+    // ОБНОВЛЕНИЕ ДАННЫХ ПРИ РАЗВОРАЧИВАНИИ ПРИЛОЖЕНИЯ
+    tg.onEvent('visibilityChanged', () => {
+        if (tg.isExpanded || document.visibilityState === 'visible') {
+            refreshData();
         }
     });
 
+    // --- ГЛАВНАЯ ФУНКЦИЯ ЗАПРОСА ДАННЫХ ---
+    async function refreshData() {
+        if (safeUserId === '000000000') return;
+
+        try {
+            const response = await fetch(`${API_URL}/api/status/${safeUserId}`);
+            if (!response.ok) return;
+            const data = await response.json();
+
+            // Обновляем Баланс и Рефералку
+            document.getElementById('user-balance').textContent = data.balance + ' ₽';
+            document.getElementById('ref-count-display').textContent = data.ref_count;
+            document.getElementById('ref-earned-display').textContent = data.ref_earned + ' ₽';
+            document.getElementById('ref-link').value = data.ref_link;
+
+            // Управление UI Подписки
+            const statusBadge = document.getElementById('sub-status-badge');
+            const progressText = document.getElementById('sub-progress-text');
+            const progressContainer = document.getElementById('sub-progress-container');
+            const progressFill = document.getElementById('sub-progress-fill');
+            const quickConnectCard = document.getElementById('quick-connect-card');
+            const accessKeyInput = document.getElementById('access-key');
+            const instructionLink = document.getElementById('instruction-link');
+
+            if (data.status === 'active') {
+                statusBadge.textContent = 'активна';
+                statusBadge.className = 'status-badge status-active';
+                progressText.classList.remove('hidden');
+                progressText.textContent = `осталось: ${data.days} дней`;
+                
+                const percentage = Math.min((data.days / data.total_days) * 100, 100);
+                progressFill.style.width = `${percentage}%`;
+                if (data.days <= 3) progressFill.classList.add('danger');
+                else progressFill.classList.remove('danger');
+                
+                quickConnectCard.classList.remove('hidden');
+                accessKeyInput.value = data.sub_link; 
+                if (instructionLink) instructionLink.href = data.sub_link;
+            } else {
+                statusBadge.textContent = 'неактивна';
+                statusBadge.className = 'status-badge status-inactive';
+                progressContainer.classList.add('hidden');
+                progressText.classList.add('hidden');
+                quickConnectCard.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error("Ошибка обновления данных:", error);
+        }
+    }
+
+    // --- ОСТАЛЬНЫЕ UI ФУНКЦИИ БЕЗ ИЗМЕНЕНИЙ ---
     function switchTab(tabId, element) {
-        document.querySelectorAll('.screen').forEach(screen => {
-            screen.classList.remove('active');
-        });
-        document.querySelectorAll('.tab-item').forEach(tab => {
-            tab.classList.remove('active');
-        });
+        document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+        document.querySelectorAll('.tab-item').forEach(tab => tab.classList.remove('active'));
         document.getElementById('screen-' + tabId).classList.add('active');
         element.classList.add('active');
-        
         if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
     }
 
@@ -1049,29 +1037,19 @@
         setTimeout(() => toast.classList.remove('show'), 2000);
     }
 
-    // --- ЛОГИКА КАЛЬКУЛЯТОРА И ПОКУПКИ ---
-
     function selectPeriod(months, price, planId, element, minDevices, badgeType, badgeText) {
         const options = element.parentElement.querySelectorAll('.period-option');
         options.forEach(opt => opt.classList.remove('active'));
         element.classList.add('active');
-
-        currentBasePrice = price;
-        currentMinDevices = minDevices;
-        currentDevices = minDevices;
-        currentPlanId = planId;
-        currentBadgeType = badgeType;
-        currentBadgeText = badgeText;
-
+        currentBasePrice = price; currentMinDevices = minDevices; currentDevices = minDevices;
+        currentPlanId = planId; currentBadgeType = badgeType; currentBadgeText = badgeText;
         updateCalculatorUI();
         if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
     }
 
     function changeDevices(delta) {
-        // Блокируем выход за нижнюю и ВЕРХНЮЮ (50) границы
         if (currentDevices + delta < currentMinDevices) return;
         if (currentDevices + delta > 50) return;
-        
         currentDevices += delta;
         updateCalculatorUI();
         if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
@@ -1080,26 +1058,18 @@
     function updateCalculatorUI() {
         const extraDevices = currentDevices - currentMinDevices;
         const totalPrice = currentBasePrice + (extraDevices * 50);
-
         document.getElementById('selected-price').textContent = totalPrice + ' ₽';
         document.getElementById('dev-count').textContent = currentDevices + ' устр.';
         
-        // Управляем бейджем
         const badge = document.getElementById('tariff-badge');
         if(badge) {
             badge.textContent = currentBadgeText;
-            if(currentBadgeType === 'hit') {
-                badge.className = 'badge-hit';
-            } else {
-                badge.className = 'badge-discount';
-            }
+            badge.className = currentBadgeType === 'hit' ? 'badge-hit' : 'badge-discount';
         }
         
-        // Управляем прозрачностью кнопок
         document.getElementById('dev-minus').disabled = (currentDevices <= currentMinDevices);
         const btnPlus = document.getElementById('dev-plus');
         if(btnPlus) btnPlus.disabled = (currentDevices >= 50);
-
         document.getElementById('buy-btn').setAttribute('onclick', `buyPlan('${currentPlanId}_${currentDevices}')`);
     }
 
