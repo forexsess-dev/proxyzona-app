@@ -31,7 +31,7 @@
             --success-bg: rgba(0, 255, 0, 0.1);
             --success-border: rgba(0, 255, 0, 0.3);
             --success-glow: none;
-            --hit-color: #b000ff; /* Фиолетовый для ХИТа */
+            --hit-color: #b000ff;
             --hit-bg: rgba(176, 0, 255, 0.1);
             --hit-border: rgba(176, 0, 255, 0.3);
             --hit-glow: none;
@@ -238,7 +238,7 @@
             transform: scale(0.98);
         }
 
-        /* Нижнее навигационное меню (Tab Bar) */
+        /* Нижнее навигационное меню */
         .tab-bar {
             position: fixed;
             bottom: 0;
@@ -408,8 +408,8 @@
         .progress-fill {
             height: 100%;
             background: var(--accent-color);
-            width: 15%;
-            transition: width 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+            width: 0%;
+            transition: width 0.5s ease-out, background-color 0.3s ease, box-shadow 0.3s ease;
             box-shadow: var(--glow);
         }
 
@@ -667,23 +667,23 @@
                 </div>
                 <div class="balance-badge">
                     <span class="muted-label">баланс:</span>
-                    <span id="user-balance" class="balance-amount">0 ₽</span>
+                    <span id="user-balance" class="balance-amount">...</span>
                 </div>
             </div>
 
             <div class="card">
                 <h3>статус подписки</h3>
-                <div class="status-badge status-active" id="sub-status-badge">активна</div>
-                <p class="text-muted" id="sub-progress-text">осталось: 0 дней</p>
+                <div class="status-badge status-inactive" id="sub-status-badge">загрузка...</div>
+                <p class="text-muted" id="sub-progress-text">осталось: ... дней</p>
                 
-                <div class="progress-container" id="sub-progress-container">
+                <div class="progress-container hidden" id="sub-progress-container">
                     <div class="progress-bar">
-                        <div class="progress-fill" id="sub-progress-fill" style="width: 90%;"></div>
+                        <div class="progress-fill" id="sub-progress-fill"></div>
                     </div>
                 </div>
             </div>
 
-            <div class="card" id="quick-connect-card">
+            <div class="card hidden" id="quick-connect-card">
                 <h3>быстрое подключение</h3>
                 <p class="text-muted">скопируйте ключ и вставьте в клиент v2ray</p>
                 <div class="input-group">
@@ -874,7 +874,7 @@
 4.3. Администрация не несёт ответственности за содержание информации, передаваемой или получаемой Пользователем при использовании VPN-сервиса.
 
 <h4>5. Обработка персональных данных</h4>5.1. Администрация обязуется соблюдать конфиденциальность персональных данных Пользователя, полученных в процессе использования Бота.
-5.2. Подробная информация об обработке персональных данных содержится в Политике конфиденциальности, являющейся неотъемлемой частью настоящего Соглашения.
+5.2. Подробная информация об обработке персональных данных содержится в Политике конфиденциальности, являющейся неотъем অংশে настоящего Соглашения.
 
 <h4>6. Срок действия и порядок изменения Соглашения</h4>6.1. Настоящее Соглашение вступает в силу с момента его принятия Пользователем и действует бессрочно.
 6.2. Администрация оставляет за собой право вносить изменения в настоящее Соглашение. Информация об изменениях будет размещена в Боте. Пользователь считается принявшим изменения, если он продолжает использовать Бот после внесения изменений.
@@ -882,7 +882,7 @@
 <h4>7. Разрешение споров</h4>7.1. Все споры, возникающие между Администрацией и Пользователем в связи с настоящим Соглашением, подлежат разрешению в порядке, предусмотренном действующим законодательством.
 
 <h4>8. Прочие условия</h4>8.1. Во всём остальном, что не предусмотрено настоящим Соглашением, стороны руководствуются действующим законодательством.
-8.2. If какое-либо положение настоящего Соглашения будет признано недействительным, это не повлияет на действительность остальных положений.</div>
+8.2. Если какое-либо положение настоящего Соглашения будет признано недействительным, это не повлияет на действительность остальных положений.</div>
     </div>
 
     <div class="tab-bar">
@@ -905,7 +905,6 @@
     </div>
 
 <script>
-    // --- Стартовые переменные ---
     let currentBasePrice = 200;
     let currentMinDevices = 2;
     let currentDevices = 2;
@@ -915,13 +914,16 @@
 
     const tg = window.Telegram.WebApp;
     
-    // ⚠️ УКАЖИ ЗДЕСЬ АДРЕС И ПОРТ ТВОЕГО БОТА (или путь проксирования Nginx)
-    const API_URL = "https://panelfinal.mooo.com/bot_api";
+    // ПУТЬ К ТВОЕМУ АПИ БОТА НА СЕРВЕРЕ
+    const API_URL = "https://panelfinal.mooo.com/bot_api"; 
 
-    // Получаем безопасный ID
+    // Получаем ID пользователя
     const urlParams = new URLSearchParams(window.location.search);
     const safeUserId = tg.initDataUnsafe?.user?.id || urlParams.get('id') || '000000000';
-    
+    const safeUserName = tg.initDataUnsafe?.user?.first_name 
+            ? (tg.initDataUnsafe.user.first_name + (tg.initDataUnsafe.user.last_name ? ' ' + tg.initDataUnsafe.user.last_name : '')) 
+            : 'resonance user';
+        
     document.addEventListener('DOMContentLoaded', () => {
         tg.ready();
         tg.expand();
@@ -940,14 +942,10 @@
         applyTheme();
         tg.onEvent('themeChanged', applyTheme);
 
-        const safeUserName = tg.initDataUnsafe?.user?.first_name 
-            ? (tg.initDataUnsafe.user.first_name + (tg.initDataUnsafe.user.last_name ? ' ' + tg.initDataUnsafe.user.last_name : '')) 
-            : 'resonance user';
-
         document.getElementById('user-name').textContent = safeUserName.toLowerCase();
         document.getElementById('user-id').textContent = 'id: ' + safeUserId;
 
-        // Первый вызов при загрузке
+        // Первый вызов получения реальных данных при загрузке
         refreshData();
     });
 
@@ -958,7 +956,7 @@
         }
     });
 
-    // --- ГЛАВНАЯ ФУНКЦИЯ ЗАПРОСА ДАННЫХ ---
+    // --- ГЛАВНАЯ ФУНКЦИЯ ПОЛУЧЕНИЯ ДАННЫХ ПО API ---
     async function refreshData() {
         if (safeUserId === '000000000') return;
 
@@ -982,33 +980,61 @@
             const accessKeyInput = document.getElementById('access-key');
             const instructionLink = document.getElementById('instruction-link');
 
-            if (data.status === 'active') {
+            if (data.status === 'active' && data.days > 0) {
                 statusBadge.textContent = 'активна';
                 statusBadge.className = 'status-badge status-active';
+                
                 progressText.classList.remove('hidden');
                 progressText.textContent = `осталось: ${data.days} дней`;
+                progressContainer.classList.remove('hidden');
                 
-                const percentage = Math.min((data.days / data.total_days) * 100, 100);
+                // ЛОГИКА "УМНОГО" ПРОГРЕСС-БАРА
+                // Достаем из памяти телефона максимальное количество дней юзера, чтобы полоска отнималась честно
+                let storedTotal = parseInt(localStorage.getItem(`total_days_${safeUserId}`)) || 0;
+                
+                // Если дней стало больше (он продлил подписку), обновляем "рекорд" в памяти
+                if (data.days > storedTotal) {
+                    storedTotal = data.days;
+                    localStorage.setItem(`total_days_${safeUserId}`, storedTotal);
+                }
+                
+                // Если память пустая (зашел с нового телефона), берем дефолт от бота
+                const finalTotalDays = storedTotal > 0 ? storedTotal : (data.total_days || 30);
+                
+                // Считаем процент (от 0 до 100)
+                const percentage = Math.max(0, Math.min((data.days / finalTotalDays) * 100, 100));
+                
+                // Рисуем полоску
                 progressFill.style.width = `${percentage}%`;
-                if (data.days <= 3) progressFill.classList.add('danger');
-                else progressFill.classList.remove('danger');
                 
+                // КРАСНЕЕТ, ЕСЛИ ОСТАЛОСЬ <= 5% (или просто меньше 3 дней на всякий пожарный)
+                if (percentage <= 5 || data.days <= 3) {
+                    progressFill.classList.add('danger');
+                } else {
+                    progressFill.classList.remove('danger');
+                }
+                
+                // Показываем ключ
                 quickConnectCard.classList.remove('hidden');
                 accessKeyInput.value = data.sub_link; 
                 if (instructionLink) instructionLink.href = data.sub_link;
+                
             } else {
+                // Если неактивна
                 statusBadge.textContent = 'неактивна';
                 statusBadge.className = 'status-badge status-inactive';
                 progressContainer.classList.add('hidden');
                 progressText.classList.add('hidden');
                 quickConnectCard.classList.add('hidden');
+                // Сбрасываем кэш, чтобы при новой покупке полоска заново отсчиталась
+                localStorage.removeItem(`total_days_${safeUserId}`);
             }
         } catch (error) {
             console.error("Ошибка обновления данных:", error);
         }
     }
 
-    // --- ОСТАЛЬНЫЕ UI ФУНКЦИИ БЕЗ ИЗМЕНЕНИЙ ---
+    // --- UI ФУНКЦИИ БЕЗ ИЗМЕНЕНИЙ ---
     function switchTab(tabId, element) {
         document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
         document.querySelectorAll('.tab-item').forEach(tab => tab.classList.remove('active'));
