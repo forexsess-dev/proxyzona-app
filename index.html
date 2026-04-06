@@ -956,13 +956,25 @@
         }
     });
 
-    // --- ГЛАВНАЯ ФУНКЦИЯ ПОЛУЧЕНИЯ ДАННЫХ ПО API ---
+    // --- ГЛАВНАЯ ФУНКЦИЯ ПОЛУЧЕНИЯ ДАННЫХ ПО API (С ДЕБАГОМ ОШИБОК) ---
     async function refreshData() {
-        if (safeUserId === '000000000') return;
+        const statusBadge = document.getElementById('sub-status-badge');
+
+        if (safeUserId === '000000000') {
+            statusBadge.textContent = 'ОШИБКА: ID НЕ НАЙДЕН';
+            statusBadge.style.backgroundColor = '#ff4444';
+            statusBadge.style.color = '#ffffff';
+            return;
+        }
 
         try {
             const response = await fetch(`${API_URL}/api/status/${safeUserId}`);
-            if (!response.ok) return;
+            if (!response.ok) {
+                statusBadge.textContent = `ОШИБКА HTTP: ${response.status}`;
+                statusBadge.style.backgroundColor = '#ff4444';
+                statusBadge.style.color = '#ffffff';
+                return;
+            }
             const data = await response.json();
 
             // Обновляем Баланс и Рефералку
@@ -972,7 +984,6 @@
             document.getElementById('ref-link').value = data.ref_link;
 
             // Управление UI Подписки
-            const statusBadge = document.getElementById('sub-status-badge');
             const progressText = document.getElementById('sub-progress-text');
             const progressContainer = document.getElementById('sub-progress-container');
             const progressFill = document.getElementById('sub-progress-fill');
@@ -983,53 +994,50 @@
             if (data.status === 'active' && data.days > 0) {
                 statusBadge.textContent = 'активна';
                 statusBadge.className = 'status-badge status-active';
+                statusBadge.style.backgroundColor = 'transparent'; // Сброс красного цвета
+                statusBadge.style.color = 'var(--accent-color)';
                 
                 progressText.classList.remove('hidden');
                 progressText.textContent = `осталось: ${data.days} дней`;
                 progressContainer.classList.remove('hidden');
                 
-                // ЛОГИКА "УМНОГО" ПРОГРЕСС-БАРА
-                // Достаем из памяти телефона максимальное количество дней юзера, чтобы полоска отнималась честно
                 let storedTotal = parseInt(localStorage.getItem(`total_days_${safeUserId}`)) || 0;
                 
-                // Если дней стало больше (он продлил подписку), обновляем "рекорд" в памяти
                 if (data.days > storedTotal) {
                     storedTotal = data.days;
                     localStorage.setItem(`total_days_${safeUserId}`, storedTotal);
                 }
                 
-                // Если память пустая (зашел с нового телефона), берем дефолт от бота
                 const finalTotalDays = storedTotal > 0 ? storedTotal : (data.total_days || 30);
-                
-                // Считаем процент (от 0 до 100)
                 const percentage = Math.max(0, Math.min((data.days / finalTotalDays) * 100, 100));
                 
-                // Рисуем полоску
                 progressFill.style.width = `${percentage}%`;
                 
-                // КРАСНЕЕТ, ЕСЛИ ОСТАЛОСЬ <= 5% (или просто меньше 3 дней на всякий пожарный)
                 if (percentage <= 5 || data.days <= 3) {
                     progressFill.classList.add('danger');
                 } else {
                     progressFill.classList.remove('danger');
                 }
                 
-                // Показываем ключ
                 quickConnectCard.classList.remove('hidden');
                 accessKeyInput.value = data.sub_link; 
                 if (instructionLink) instructionLink.href = data.sub_link;
                 
             } else {
-                // Если неактивна
                 statusBadge.textContent = 'неактивна';
                 statusBadge.className = 'status-badge status-inactive';
+                statusBadge.style.backgroundColor = 'var(--danger-bg)';
+                statusBadge.style.color = 'var(--danger-color)';
+                
                 progressContainer.classList.add('hidden');
                 progressText.classList.add('hidden');
                 quickConnectCard.classList.add('hidden');
-                // Сбрасываем кэш, чтобы при новой покупке полоска заново отсчиталась
                 localStorage.removeItem(`total_days_${safeUserId}`);
             }
         } catch (error) {
+            statusBadge.textContent = 'ОШИБКА СЕТИ (CORS)';
+            statusBadge.style.backgroundColor = '#ff4444';
+            statusBadge.style.color = '#ffffff';
             console.error("Ошибка обновления данных:", error);
         }
     }
